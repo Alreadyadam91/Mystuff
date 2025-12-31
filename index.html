@@ -19,18 +19,33 @@
     let selectedProviders = [];
     let sdkReady = false;
 
+    // Helper to update the UI status text (so you can see what's happening)
+    function setStatus(msg, isError = false) {
+        let statusEl = document.getElementById('searchStatus');
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'searchStatus';
+            statusEl.style.fontSize = '0.75rem';
+            statusEl.style.marginTop = '4px';
+            document.getElementById('doctorSearch').parentNode.appendChild(statusEl);
+        }
+        statusEl.innerText = msg;
+        statusEl.style.color = isError ? '#ef4444' : '#94a3b8'; // Red or Grey
+    }
+
     // Initialize Zoho SDK
     ZOHO.embeddedApp.on("PageLoad", function(data) {
-        console.log("✅ Zoho SDK Loaded Successfully");
+        console.log("✅ Zoho SDK PageLoad");
         sdkReady = true;
+        setStatus("System Ready. Type to search.");
     });
 
     ZOHO.embeddedApp.init().then(() => {
-        console.log("✅ Zoho SDK Init Completed");
+        console.log("✅ Zoho SDK Init");
         sdkReady = true;
     });
 
-    // --- STEP 1: CONTACT SEARCH (STRICTLY CONTACTS MODULE) ---
+    // --- STEP 1: CONTACT SEARCH (BROAD SEARCH MODE) ---
     let searchTimeout;
     document.getElementById('doctorSearch').addEventListener('input', function(e) {
         clearTimeout(searchTimeout);
@@ -38,51 +53,41 @@
         
         if (query.length < 2) {
             document.getElementById('lookupResults').style.display = 'none';
+            setStatus("Type at least 2 characters...");
             return;
         }
         
-        searchTimeout = setTimeout(() => searchContacts(query), 400);
+        setStatus("Waiting to stop typing...");
+        searchTimeout = setTimeout(() => searchContacts(query), 500);
     });
 
     async function searchContacts(query) {
         if (!sdkReady) {
-            console.warn("⚠️ SDK not ready yet. Please wait a moment.");
+            setStatus("⚠️ Zoho SDK is not ready. Try refreshing the page.", true);
             return;
         }
 
-        console.log(`🔎 Searching for: "${query}"...`);
+        setStatus(`🔍 Searching Zoho for "${query}"...`);
         
         try {
-            // TRY 1: Search by Last Name OR First Name (Most reliable)
-            // Note: We use specific criteria because Full_Name often fails in API
-            let response = await ZOHO.CRM.API.searchRecord({
+            // "word" search is more forgiving. It searches Name, Email, etc.
+            const response = await ZOHO.CRM.API.searchRecord({
                 Entity: "Contacts",
-                Type: "criteria",
-                Query: `((Last_Name:starts_with:${query}) OR (First_Name:starts_with:${query}))`
+                Type: "word",
+                Query: query
             });
-
-            // TRY 2: If no results, try a generic "word" search (Broad search)
-            if (!response.data) {
-                console.log("No specific matches, trying broad search...");
-                response = await ZOHO.CRM.API.searchRecord({
-                    Entity: "Contacts",
-                    Type: "word",
-                    Query: query
-                });
-            }
             
-            if (response.data) {
-                console.log(`✅ Found ${response.data.length} contacts.`);
+            if (response.data && response.data.length > 0) {
+                setStatus(`✅ Found ${response.data.length} contacts.`);
                 displayLookupResults(response.data);
             } else {
-                console.log("❌ No contacts found.");
-                document.getElementById('lookupResults').innerHTML = '<div class="lookup-item">No contacts found</div>';
+                setStatus("❌ No contacts found.", true);
+                document.getElementById('lookupResults').innerHTML = '<div class="lookup-item">No matches found</div>';
                 document.getElementById('lookupResults').style.display = 'block';
             }
         } catch (error) {
-            console.error("❌ Error searching contacts:", error);
-            document.getElementById('lookupResults').innerHTML = '<div class="lookup-item" style="color:red">Search Error (Check Console)</div>';
-            document.getElementById('lookupResults').style.display = 'block';
+            console.error(error);
+            setStatus(`❌ Error: ${error.message || "Check Console"}`, true);
         }
     }
 
@@ -90,35 +95,33 @@
         const resultsDiv = document.getElementById('lookupResults');
         resultsDiv.innerHTML = '';
         
-        // Limit to 10 results to keep it fast
+        // Limit to 10 results
         contacts.slice(0, 10).forEach(contact => {
             const div = document.createElement('div');
             div.className = 'lookup-item';
             
-            // Handle missing Full_Name by constructing it
-            const displayName = contact.Full_Name || `${contact.First_Name || ''} ${contact.Last_Name || ''}`;
+            // Construct Name safely
+            const fullName = contact.Full_Name || `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || "Unknown Name";
             
             div.innerHTML = `
-                <div style="font-weight:600;">${displayName}</div>
+                <div style="font-weight:600;">${fullName}</div>
                 <div style="font-size:0.85rem; color:var(--text-dim);">${contact.Email || 'No Email'}</div>
             `;
-            div.onclick = () => selectContact(contact);
+            div.onclick = () => selectContact(contact, fullName);
             resultsDiv.appendChild(div);
         });
         
         resultsDiv.style.display = 'block';
     }
 
-    async function selectContact(contact) {
-        // Handle cases where Full_Name might be empty in the object
-        const displayName = contact.Full_Name || `${contact.First_Name} ${contact.Last_Name}`;
-        
+    async function selectContact(contact, fullName) {
         selectedContactId = contact.id;
-        selectedContactName = displayName;
+        selectedContactName = fullName;
         
-        document.getElementById('doctorSearch').value = displayName;
+        document.getElementById('doctorSearch').value = fullName;
         document.getElementById('selectedContactId').value = contact.id;
         document.getElementById('lookupResults').style.display = 'none';
+        setStatus(`✅ Selected: ${fullName}`);
         
         // Trigger Provider Search using the Contact ID
         await fetchProviderNumbers(contact.id);
@@ -126,9 +129,9 @@
 
     // --- STEP 2: FETCH PROVIDERS FROM CUSTOM MODULE ---
     async function fetchProviderNumbers(contactId) {
+        setStatus("🔍 Finding Provider Numbers...");
+        
         try {
-            console.log(`🔎 Searching ${PROVIDER_MODULE_NAME} for Contact ID: ${contactId}`);
-
             const response = await ZOHO.CRM.API.searchRecord({
                 Entity: PROVIDER_MODULE_NAME,
                 Type: "criteria",
@@ -138,10 +141,12 @@
             availableProviders = [];
 
             if (response.data) {
-                console.log(`✅ Found ${response.data.length} provider numbers.`);
+                setStatus(`✅ Found ${response.data.length} provider numbers.`);
                 response.data.forEach(record => {
+                    // Try 'Name' first, then 'Provider_Number'
                     const pNum = record[PROVIDER_NAME_FIELD] || record.Provider_Number;
                     
+                    // Logic to find label
                     let pLoc = "";
                     if (record.Hospital && record.Hospital.name) {
                         pLoc = record.Hospital.name; 
@@ -159,12 +164,12 @@
                 
                 displayProviderCheckboxes();
             } else {
-                alert(`No provider numbers found linked to this contact in '${PROVIDER_MODULE_NAME}'.`);
+                setStatus("⚠️ No provider numbers found for this contact.", true);
                 document.getElementById('providerGroup').style.display = 'none';
             }
         } catch (error) {
-            console.error("❌ Error fetching provider module:", error);
-            alert(`Error searching '${PROVIDER_MODULE_NAME}'. Check Console (F12).`);
+            console.error("Provider Error:", error);
+            setStatus(`❌ Provider Error: ${error.message}`, true);
         }
     }
 
@@ -197,7 +202,7 @@
         ).join('');
     }
 
-    // --- STEP 3: PDF PROCESSING (Unchanged Logic) ---
+    // --- STEP 3: PDF PROCESSING (Unchanged) ---
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -214,6 +219,7 @@
 
         document.getElementById('step1').style.display = 'none';
         document.getElementById('debugBox').style.display = 'block';
+        setStatus("Processing PDF...");
         
         try {
             updateDebug("Loading PDF File...", null);
@@ -364,9 +370,11 @@
             const bytes = await newDoc.save();
             const base64 = await arrayBufferToBase64(bytes);
             
+            // Clean filename
             const fileName = `Dr_${selectedContactName.replace(/[^a-zA-Z0-9]/g, '_')}_${finalName.replace(/ /g, '_')}.pdf`;
             
             try {
+                // Upload as attachment to CONTACT
                 await ZOHO.CRM.API.attachFile({
                     Entity: "Contacts",
                     RecordID: selectedContactId,
