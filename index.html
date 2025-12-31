@@ -3,292 +3,810 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adam's Health Fund Pack Separator</title>
+    <title>PDF QR Splitter</title>
     
-    <script src="pdf.min.js"></script>
-    <script src="jsQR.min.js"></script>
-    <script src="pdf-lib.min.js"></script>
-
+    <!-- Other Libraries ONLY - Zoho SDK is loaded automatically in widget environment -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
     <style>
-        /* (Styles kept identical to previous version) */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        :root { --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%); --accent: #667eea; --accent-light: #818cf8; --bg: #0f172a; --card: #1e293b; --border: #334155; --text: #e2e8f0; --text-dim: #94a3b8; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .app { max-width: 1000px; margin: 0 auto; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
-        .header { background: var(--primary); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
-        .header h1 { margin: 0; font-size: 1.8rem; font-weight: 800; color: white; position: relative; z-index: 1; }
-        .header-subtitle { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; font-weight: 500; }
-        .btn-reset { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; z-index: 1; position: relative; }
-        .content { padding: 40px; }
-        .input-group { margin-bottom: 25px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text); }
-        input, textarea { width: 100%; padding: 14px 18px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 1rem; }
-        .upload-zone { border: 3px dashed var(--border); border-radius: 16px; padding: 60px 40px; text-align: center; cursor: pointer; background: rgba(102, 126, 234, 0.05); transition: all 0.4s ease; }
-        .upload-zone:hover { border-color: var(--accent); background: rgba(102, 126, 234, 0.1); }
-        .debug-container { margin-top: 30px; padding: 25px; background: #1e293b; border-radius: 16px; color: white; display: none; border: 1px solid var(--border); }
-        .debug-canvas { border: 2px solid var(--accent); margin-top: 15px; max-width: 100%; height: auto; border-radius: 8px; }
-        .form-row { display: flex; align-items: center; padding: 18px 20px; border: 2px solid var(--border); border-radius: 14px; margin-bottom: 12px; background: var(--bg); cursor: pointer; }
-        .form-icon { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; font-weight: 800; }
-        .preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .preview-modal.active { display: flex; }
-        .preview-content { background: var(--card); border-radius: 20px; padding: 30px; max-width: 95%; max-height: 95%; overflow: auto; position: relative; border: 1px solid var(--border); }
-        .preview-close { position: absolute; top: 20px; right: 20px; background: #ef4444; color: white; border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; }
-        .preview-canvas { border: 2px solid var(--border); margin-top: 20px; max-width: 100%; border-radius: 12px; }
-        .preview-nav { display: flex; gap: 15px; margin-top: 20px; justify-content: center; align-items: center; }
-        .btn { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 25px; font-size: 1.1rem; }
-        .hidden { display: none; }
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --border: #475569;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        
+        .subtitle {
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        input[type="text"],
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
+        }
+        
+        .lookup-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+        
+        .lookup-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        
+        .lookup-item:last-child {
+            border-bottom: none;
+        }
+        
+        .lookup-item:hover {
+            background: var(--bg-hover);
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .checkbox-label:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .selected-provider {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            margin: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .debug-box {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .debug-box canvas {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+        
+        .form-row {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .form-row:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary);
+        }
+        
+        .form-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        
+        .preview-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        
+        .preview-controls button {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .preview-controls button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 16px 0;
+        }
     </style>
 </head>
 <body>
-
-<div class="app">
-    <div class="header">
-        <div>
-            <h1>Adam's Health Fund Pack Separator</h1>
-            <div class="header-subtitle">Intelligent QR Code Detection & Document Splitting</div>
-        </div>
-        <button class="btn-reset" onclick="location.reload()">↻ Reset</button>
-    </div>
-    <div class="content">
-        <div id="step1">
-            <div class="input-group">
-                <label>👨‍⚕️ Doctor Name</label>
-                <input type="text" id="doctorName" placeholder="e.g. Dr. John Smith">
+    <div class="container">
+        <h1>📄 PDF QR Code Splitter</h1>
+        <p class="subtitle">Split PDFs by QR codes and upload to Zoho CRM</p>
+        
+        <!-- STEP 1: Contact & Provider Selection -->
+        <div id="step1" class="card">
+            <div class="form-group">
+                <label for="doctorSearch">🔍 Search Contact</label>
+                <input type="text" id="doctorSearch" placeholder="Start typing a contact name...">
+                <input type="hidden" id="selectedContactId">
+                <div id="lookupResults" class="lookup-results"></div>
             </div>
-            <div class="input-group">
-                <label>🔢 Provider Number(s)</label>
-                <textarea id="providerNumbers" rows="1" placeholder="e.g. 1234567A"></textarea>
+            
+            <div id="providerGroup" class="form-group" style="display:none;">
+                <label>📋 Select Provider Numbers</label>
+                <div id="providerCheckboxes"></div>
+                <div id="selectedProviders" style="margin-top:12px;"></div>
             </div>
-            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                <h3>📤 Upload PDF Pack</h3>
-                <p style="color:var(--text-dim); margin-top:8px;">Scanning bottom-right corner of every page for QR codes</p>
-                <input type="file" id="fileInput" accept="application/pdf" style="display:none">
+            
+            <div class="form-group">
+                <label for="fileInput">📎 Upload PDF</label>
+                <input type="file" id="fileInput" accept="application/pdf">
             </div>
         </div>
         
-        <div id="debugBox" class="debug-container">
-            <div class="debug-info">🔍 SCANNER DEBUG VIEW (Bottom Right Corner)</div>
-            <div id="scanStatus">Initializing...</div>
-            <canvas id="debugCanvas" class="debug-canvas"></canvas>
-            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:8px;">If you see the QR code clearly above, detection will work perfectly.</div>
+        <!-- DEBUG BOX -->
+        <div id="debugBox" class="debug-box">
+            <div id="scanStatus" style="color:white; margin-bottom:12px;">Processing...</div>
+            <canvas id="debugCanvas"></canvas>
         </div>
         
-        <div id="step2" class="hidden">
-            <h3 style="margin-bottom:20px; padding-bottom:15px; border-bottom:2px solid var(--border); font-size:1.4rem;">✅ Detected Forms (Click to Preview)</h3>
+        <!-- STEP 2: Results -->
+        <div id="step2" class="card hidden">
+            <h2 style="margin-bottom:16px;">📋 Detected Forms</h2>
             <div id="resultsList"></div>
-            <button id="downloadBtn" class="btn" onclick="processDownloads()">⬇️ Download All Separated Files</button>
+            <button id="uploadBtn" class="btn" onclick="uploadToZoho()">☁️ Upload All to Zoho CRM Contact</button>
         </div>
     </div>
-</div>
-
-<div id="previewModal" class="preview-modal">
-    <div class="preview-content">
-        <button class="preview-close" onclick="closePreview()">✕ Close</button>
-        <h3 id="previewTitle" style="font-size:1.5rem;">Preview</h3>
-        <div style="color: var(--text-dim); margin-top: 8px;" id="previewInfo"></div>
-        <canvas id="previewCanvas" class="preview-canvas"></canvas>
-        <div class="preview-nav">
-            <button onclick="previewPrevPage()" id="prevPageBtn">← Previous</button>
-            <span id="pageIndicator" style="padding: 12px 20px; color: var(--text-dim); font-weight:600;"></span>
-            <button onclick="previewNextPage()" id="nextPageBtn">Next →</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // CRITICAL FIX: Point to the LOCAL worker file we downloaded
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
     
-    let pdfBytes = null;
-    let forms = [];
-    let currentPreviewForm = null;
-    let currentPreviewPage = 0;
-    let pdfDocForPreview = null;
+    <!-- PREVIEW MODAL -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3 id="previewTitle">Preview</h3>
+                    <p id="previewInfo" style="color:var(--text-dim); font-size:0.9rem;"></p>
+                </div>
+                <button class="modal-close" onclick="closePreview()">✕</button>
+            </div>
+            <canvas id="previewCanvas"></canvas>
+            <div class="preview-controls">
+                <button id="prevPageBtn" onclick="previewPrevPage()">← Previous</button>
+                <span id="pageIndicator" style="color:var(--text-dim);"></span>
+                <button id="nextPageBtn" onclick="previewNextPage()">Next →</button>
+            </div>
+        </div>
+    </div>
 
-    window.onload = function() {
-        if (typeof pdfjsLib === 'undefined' || typeof jsQR === 'undefined' || typeof PDFLib === 'undefined') {
-            alert("Error: One or more library files (pdf.min.js, jsQR.min.js, etc.) are missing from the zip file.");
-        }
-    };
+    <script>
+        // --- ⚙️ CONFIGURATION -------------------------------
+        const PROVIDER_MODULE_NAME = "Provider_Numbers";   
+        const PROVIDER_NAME_FIELD = "Name";                
+        const PROVIDER_CONTACT_FIELD = "Provider_Contact"; 
+        // ----------------------------------------------------
 
-    document.getElementById('fileInput').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
-        const docName = document.getElementById('doctorName').value;
-        if(!docName) {
-            alert("Please enter Doctor Name first");
-            return;
-        }
+        // ZOHO is globally available in widget environment - no need to declare or import
+        let pdfBytes = null;
+        let forms = [];
+        let currentPreviewForm = null;
+        let currentPreviewPage = 0;
+        let pdfDocForPreview = null;
+        let selectedContactId = null;
+        let selectedContactName = null;
+        let availableProviders = [];
+        let selectedProviders = [];
+        let sdkReady = false;
 
-        document.getElementById('step1').style.display = 'none';
-        document.getElementById('debugBox').style.display = 'block';
-        
-        try {
-            updateDebug("Loading PDF File...", null);
-            pdfBytes = await file.arrayBuffer();
-            
-            const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-            updateDebug(`PDF Loaded. Scanning ${pdf.numPages} pages...`, null);
-
-            forms = [];
-            let currentForm = null;
-
-            for(let i=1; i<=pdf.numPages; i++) {
-                updateDebug(`Scanning Page ${i}/${pdf.numPages}...`, null);
-                
-                const page = await pdf.getPage(i);
-                
-                // --- SCANNING CONFIGURATION ---
-                const scale = 3.0; 
-                const viewport = page.getViewport({ scale: scale });
-
-                const scanX = Math.floor(viewport.width * 0.6);
-                const scanY = Math.floor(viewport.height * 0.6);
-                const scanW = Math.floor(viewport.width * 0.4);
-                const scanH = Math.floor(viewport.height * 0.4);
-
-                const canvas = document.createElement('canvas');
-                canvas.width = scanW;
-                canvas.height = scanH;
-                const ctx = canvas.getContext('2d');
-                ctx.translate(-scanX, -scanY);
-                
-                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-                if (i === 1) {
-                    const debugCanvas = document.getElementById('debugCanvas');
-                    debugCanvas.width = scanW;
-                    debugCanvas.height = scanH;
-                    debugCanvas.getContext('2d').putImageData(ctx.getImageData(0,0,scanW,scanH), 0, 0);
-                }
-
-                const imageData = ctx.getImageData(0, 0, scanW, scanH);
-                const code = jsQR(imageData.data, scanW, scanH, { inversionAttempts: "dontInvert" });
-
-                if (code && code.data) {
-                    let name = code.data;
-                    if(name.includes('http')) { try { name = name.split('/').pop(); } catch(e){} }
-                    name = name.replace(/[^a-zA-Z0-9 \-_]/g, '').substring(0, 30);
-                    
-                    if(currentForm) forms.push(currentForm);
-                    updateDebug(`Page ${i}: QR Found! (${name})`, true);
-                    currentForm = { name: name || `Form_${forms.length+1}`, pages: [i] };
-                } else {
-                    if(currentForm) { currentForm.pages.push(i); } 
-                    else { currentForm = { name: "Manual_Review_Or_Header", pages: [i] }; }
-                }
+        // Helper to update the UI status text
+        function setStatus(msg, isError = false) {
+            let statusEl = document.getElementById('searchStatus');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.id = 'searchStatus';
+                statusEl.style.fontSize = '0.75rem';
+                statusEl.style.marginTop = '4px';
+                document.getElementById('doctorSearch').parentNode.appendChild(statusEl);
             }
-            if(currentForm) forms.push(currentForm);
-
-            pdfDocForPreview = pdf;
-            renderResults();
-
-        } catch(err) {
-            alert("Error: " + err.message);
-            updateDebug("Error: " + err.message);
-            console.error(err);
+            statusEl.innerText = msg;
+            statusEl.style.color = isError ? '#ef4444' : '#94a3b8';
         }
-    });
 
-    function updateDebug(msg, success) {
-        const el = document.getElementById('scanStatus');
-        el.innerText = msg;
-        if(success === true) el.style.color = '#4ade80';
-        else if(success === false) el.style.color = '#fbbf24';
-        else el.style.color = 'white';
-    }
+        // Wait for ZOHO to be available
+        function initializeZoho() {
+            if (typeof ZOHO !== 'undefined' && ZOHO.embeddedApp) {
+                console.log("✅ ZOHO SDK detected");
+                
+                ZOHO.embeddedApp.on("PageLoad", function(data) {
+                    console.log("✅ Zoho SDK PageLoad", data);
+                    sdkReady = true;
+                    setStatus("System Ready. Type to search.");
+                });
 
-    function renderResults() {
-        document.getElementById('debugBox').style.display = 'none';
-        document.getElementById('step2').classList.remove('hidden');
-        const list = document.getElementById('resultsList');
-        list.innerHTML = '';
+                ZOHO.embeddedApp.init().then(() => {
+                    console.log("✅ Zoho SDK Init Success");
+                    sdkReady = true;
+                    setStatus("System Ready. Type to search.");
+                }).catch(err => {
+                    console.error("❌ SDK Init Error:", err);
+                    setStatus("Failed to initialize Zoho SDK", true);
+                });
+            } else {
+                console.log("⏳ Waiting for ZOHO SDK...");
+                setTimeout(initializeZoho, 100);
+            }
+        }
 
-        forms.forEach((f, idx) => {
-            const div = document.createElement('div');
-            div.className = 'form-row'; 
-            div.onclick = () => openPreview(idx);
-            div.innerHTML = `
-                <div class="form-icon">${idx+1}</div>
-                <div style="flex:1">
-                    <input type="text" value="${f.name}" id="name-${idx}" onclick="event.stopPropagation()" style="width:100%; border:none; background:transparent; font-weight:bold; outline:none; font-size:1rem; color:var(--text);">
-                    <div style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">Pages ${f.pages.join(', ')} • ${f.pages.length} page${f.pages.length>1?'s':''} • Click to preview</div>
-                </div>`;
-            list.appendChild(div);
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeZoho);
+        } else {
+            initializeZoho();
+        }
+
+        // --- STEP 1: CONTACT SEARCH ---
+        let searchTimeout;
+        document.getElementById('doctorSearch').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length < 1) {
+                document.getElementById('lookupResults').style.display = 'none';
+                setStatus("Start typing...");
+                return;
+            }
+            
+            setStatus("Waiting to stop typing...");
+            searchTimeout = setTimeout(() => searchContacts(query), 300);
         });
-    }
 
-    async function openPreview(formIdx) {
-        currentPreviewForm = forms[formIdx];
-        currentPreviewPage = 0;
-        document.getElementById('previewModal').classList.add('active');
-        await renderPreviewPage();
-    }
-
-    function closePreview() {
-        document.getElementById('previewModal').classList.remove('active');
-        currentPreviewForm = null;
-    }
-
-    async function previewPrevPage() {
-        if (currentPreviewPage > 0) { currentPreviewPage--; await renderPreviewPage(); }
-    }
-
-    async function previewNextPage() {
-        if (currentPreviewPage < currentPreviewForm.pages.length - 1) { currentPreviewPage++; await renderPreviewPage(); }
-    }
-
-    async function renderPreviewPage() {
-        const pageNum = currentPreviewForm.pages[currentPreviewPage];
-        document.getElementById('previewTitle').innerText = `Preview: ${currentPreviewForm.name}`;
-        document.getElementById('previewInfo').innerText = `Viewing page ${currentPreviewPage + 1} of ${currentPreviewForm.pages.length} (PDF page ${pageNum})`;
-        document.getElementById('pageIndicator').innerText = `${currentPreviewPage + 1} / ${currentPreviewForm.pages.length}`;
-        document.getElementById('prevPageBtn').disabled = currentPreviewPage === 0;
-        document.getElementById('nextPageBtn').disabled = currentPreviewPage === currentPreviewForm.pages.length - 1;
-
-        const page = await pdfDocForPreview.getPage(pageNum);
-        const scale = 1.5;
-        const viewport = page.getViewport({ scale });
-        const canvas = document.getElementById('previewCanvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
-    }
-
-    async function processDownloads() {
-        const btn = document.getElementById('downloadBtn');
-        btn.innerText = "⏳ Processing...";
-        btn.disabled = true;
-        
-        const doctor = document.getElementById('doctorName').value.replace(/[^a-zA-Z0-9]/g, '_');
-        const srcDoc = await PDFLib.PDFDocument.load(pdfBytes);
-
-        for (let idx = 0; idx < forms.length; idx++) {
-            const f = forms[idx];
-            const finalName = document.getElementById(`name-${idx}`).value;
-            const newDoc = await PDFLib.PDFDocument.create();
-            const indices = f.pages.map(p => p - 1);
-            const copied = await newDoc.copyPages(srcDoc, indices);
-            copied.forEach(p => newDoc.addPage(p));
+        async function searchContacts(query) {
+            console.log("🔍 Search triggered for:", query);
+            console.log("SDK Ready:", sdkReady);
+            console.log("ZOHO available:", typeof ZOHO !== 'undefined');
             
-            const bytes = await newDoc.save();
-            const blob = new Blob([bytes], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
+            if (!sdkReady) {
+                setStatus("⚠️ Zoho SDK is not ready. Please wait...", true);
+                return;
+            }
+
+            setStatus(`🔍 Searching Zoho for "${query}"...`);
             
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Dr_${doctor}_${finalName.replace(/ /g, '_')}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            
-            await new Promise(r => setTimeout(r, 800));
+            try {
+                const response = await ZOHO.CRM.API.searchRecord({
+                    Entity: "Contacts",
+                    Type: "word",
+                    Query: query
+                });
+                
+                console.log("Search response:", response);
+                
+                if (response.data && response.data.length > 0) {
+                    setStatus(`✅ Found ${response.data.length} contacts.`);
+                    displayLookupResults(response.data);
+                } else {
+                    setStatus("❌ No contacts found.", true);
+                    document.getElementById('lookupResults').innerHTML = '<div class="lookup-item">No matches found</div>';
+                    document.getElementById('lookupResults').style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Full search error:", error);
+                setStatus(`❌ Error: ${error.message || "Check Console"}`, true);
+            }
         }
-        btn.innerText = "✅ Done!";
-        setTimeout(() => { btn.disabled = false; btn.innerText = "⬇️ Download All Separated Files"; }, 3000);
-    }
-</script>
+
+        function displayLookupResults(contacts) {
+            const resultsDiv = document.getElementById('lookupResults');
+            resultsDiv.innerHTML = '';
+            
+            contacts.slice(0, 10).forEach(contact => {
+                const div = document.createElement('div');
+                div.className = 'lookup-item';
+                
+                const fullName = contact.Full_Name || `${contact.First_Name || ''} ${contact.Last_Name || ''}`.trim() || "Unknown Name";
+                
+                div.innerHTML = `
+                    <div style="font-weight:600;">${fullName}</div>
+                    <div style="font-size:0.85rem; color:var(--text-dim);">${contact.Email || 'No Email'}</div>
+                `;
+                div.onclick = () => selectContact(contact, fullName);
+                resultsDiv.appendChild(div);
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        async function selectContact(contact, fullName) {
+            selectedContactId = contact.id;
+            selectedContactName = fullName;
+            
+            document.getElementById('doctorSearch').value = fullName;
+            document.getElementById('selectedContactId').value = contact.id;
+            document.getElementById('lookupResults').style.display = 'none';
+            setStatus(`✅ Selected: ${fullName}`);
+            
+            await fetchProviderNumbers(contact.id);
+        }
+
+        // --- STEP 2: FETCH PROVIDERS ---
+        async function fetchProviderNumbers(contactId) {
+            setStatus("🔍 Finding Provider Numbers...");
+            
+            try {
+                const response = await ZOHO.CRM.API.searchRecord({
+                    Entity: PROVIDER_MODULE_NAME,
+                    Type: "criteria",
+                    Query: `(${PROVIDER_CONTACT_FIELD}:equals:${contactId})`
+                });
+                
+                availableProviders = [];
+
+                if (response.data) {
+                    setStatus(`✅ Found ${response.data.length} provider numbers.`);
+                    response.data.forEach(record => {
+                        const pNum = record[PROVIDER_NAME_FIELD] || record.Provider_Number;
+                        
+                        let pLoc = "";
+                        if (record.Hospital && record.Hospital.name) {
+                            pLoc = record.Hospital.name; 
+                        } else if (record.Practice_Name) {
+                            pLoc = record.Practice_Name;
+                        }
+                        
+                        if(pNum) {
+                            availableProviders.push({
+                                value: pNum,
+                                label: pLoc ? `${pNum} (${pLoc})` : pNum
+                            });
+                        }
+                    });
+                    
+                    displayProviderCheckboxes();
+                } else {
+                    setStatus("⚠️ No provider numbers found for this contact.", true);
+                    document.getElementById('providerGroup').style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Provider Error:", error);
+                setStatus(`❌ Provider Error: ${error.message}`, true);
+            }
+        }
+
+        function displayProviderCheckboxes() {
+            const container = document.getElementById('providerCheckboxes');
+            container.innerHTML = '';
+            
+            if(availableProviders.length === 0) return;
+
+            availableProviders.forEach((providerObj) => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-label';
+                label.innerHTML = `
+                    <input type="checkbox" value="${providerObj.value}" onchange="updateSelectedProviders()">
+                    <span>${providerObj.label}</span>
+                `;
+                container.appendChild(label);
+            });
+            
+            document.getElementById('providerGroup').style.display = 'block';
+        }
+
+        function updateSelectedProviders() {
+            const checkboxes = document.querySelectorAll('#providerCheckboxes input[type="checkbox"]:checked');
+            selectedProviders = Array.from(checkboxes).map(cb => cb.value);
+            
+            const display = document.getElementById('selectedProviders');
+            display.innerHTML = selectedProviders.map(p => 
+                `<span class="selected-provider">${p}</span>`
+            ).join('');
+        }
+
+        // --- STEP 3: PDF PROCESSING ---
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            if(!selectedContactId) {
+                alert("Please select a contact first");
+                return;
+            }
+
+            if(selectedProviders.length === 0) {
+                alert("Please select at least one provider number");
+                return;
+            }
+
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('debugBox').style.display = 'block';
+            setStatus("Processing PDF...");
+            
+            try {
+                updateDebug("Loading PDF File...", null);
+                pdfBytes = await file.arrayBuffer();
+                
+                const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+                updateDebug(`PDF Loaded. Scanning ${pdf.numPages} pages...`, null);
+
+                forms = [];
+                let currentForm = null;
+
+                for(let i=1; i<=pdf.numPages; i++) {
+                    updateDebug(`Scanning Page ${i}/${pdf.numPages}...`, null);
+                    
+                    const page = await pdf.getPage(i);
+                    const scale = 3.0; 
+                    const viewport = page.getViewport({ scale: scale });
+
+                    const scanX = Math.floor(viewport.width * 0.6);
+                    const scanY = Math.floor(viewport.height * 0.6);
+                    const scanW = Math.floor(viewport.width * 0.4);
+                    const scanH = Math.floor(viewport.height * 0.4);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = scanW;
+                    canvas.height = scanH;
+                    const ctx = canvas.getContext('2d');
+                    ctx.translate(-scanX, -scanY);
+                    
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                    if (i === 1) {
+                        const debugCanvas = document.getElementById('debugCanvas');
+                        debugCanvas.width = scanW;
+                        debugCanvas.height = scanH;
+                        debugCanvas.getContext('2d').putImageData(ctx.getImageData(0,0,scanW,scanH), 0, 0);
+                    }
+
+                    const imageData = ctx.getImageData(0, 0, scanW, scanH);
+                    const code = jsQR(imageData.data, scanW, scanH, { inversionAttempts: "dontInvert" });
+
+                    if (code && code.data) {
+                        let name = code.data;
+                        if(name.includes('http')) { try { name = name.split('/').pop(); } catch(e){} }
+                        name = name.replace(/[^a-zA-Z0-9 \-_]/g, '').substring(0, 30);
+                        
+                        if(currentForm) forms.push(currentForm);
+                        updateDebug(`Page ${i}: QR Found! (${name})`, true);
+                        currentForm = { name: name || `Form_${forms.length+1}`, pages: [i] };
+                    } else {
+                        if(currentForm) { currentForm.pages.push(i); } 
+                        else { currentForm = { name: "Manual_Review_Or_Header", pages: [i] }; }
+                    }
+                }
+                if(currentForm) forms.push(currentForm);
+
+                pdfDocForPreview = pdf;
+                renderResults();
+
+            } catch(err) {
+                alert("Error: " + err.message);
+                updateDebug("Error: " + err.message);
+                console.error(err);
+            }
+        });
+
+        function updateDebug(msg, success) {
+            const el = document.getElementById('scanStatus');
+            el.innerText = msg;
+            if(success === true) el.style.color = '#4ade80';
+            else if(success === false) el.style.color = '#fbbf24';
+            else el.style.color = 'white';
+        }
+
+        function renderResults() {
+            document.getElementById('debugBox').style.display = 'none';
+            document.getElementById('step2').classList.remove('hidden');
+            const list = document.getElementById('resultsList');
+            list.innerHTML = '';
+
+            forms.forEach((f, idx) => {
+                const div = document.createElement('div');
+                div.className = 'form-row'; 
+                div.onclick = () => openPreview(idx);
+                div.innerHTML = `
+                    <div class="form-icon">${idx+1}</div>
+                    <div style="flex:1">
+                        <input type="text" value="${f.name}" id="name-${idx}" onclick="event.stopPropagation()" style="width:100%; border:none; background:transparent; font-weight:bold; outline:none; font-size:1rem; color:var(--text);">
+                        <div style="font-size:0.85rem; color:var(--text-dim); margin-top:4px;">Pages ${f.pages.join(', ')} • ${f.pages.length} page${f.pages.length>1?'s':''} • Click to preview</div>
+                    </div>`;
+                list.appendChild(div);
+            });
+        }
+
+        async function openPreview(formIdx) {
+            currentPreviewForm = forms[formIdx];
+            currentPreviewPage = 0;
+            document.getElementById('previewModal').classList.add('active');
+            await renderPreviewPage();
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.remove('active');
+            currentPreviewForm = null;
+        }
+
+        async function previewPrevPage() {
+            if (currentPreviewPage > 0) { currentPreviewPage--; await renderPreviewPage(); }
+        }
+
+        async function previewNextPage() {
+            if (currentPreviewPage < currentPreviewForm.pages.length - 1) { currentPreviewPage++; await renderPreviewPage(); }
+        }
+
+        async function renderPreviewPage() {
+            const pageNum = currentPreviewForm.pages[currentPreviewPage];
+            document.getElementById('previewTitle').innerText = `Preview: ${currentPreviewForm.name}`;
+            document.getElementById('previewInfo').innerText = `Viewing page ${currentPreviewPage + 1} of ${currentPreviewForm.pages.length} (PDF page ${pageNum})`;
+            document.getElementById('pageIndicator').innerText = `${currentPreviewPage + 1} / ${currentPreviewForm.pages.length}`;
+            document.getElementById('prevPageBtn').disabled = currentPreviewPage === 0;
+            document.getElementById('nextPageBtn').disabled = currentPreviewPage === currentPreviewForm.pages.length - 1;
+
+            const page = await pdfDocForPreview.getPage(pageNum);
+            const scale = 1.5;
+            const viewport = page.getViewport({ scale });
+            const canvas = document.getElementById('previewCanvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport }).promise;
+        }
+
+        async function uploadToZoho() {
+            const btn = document.getElementById('uploadBtn');
+            btn.innerText = "⏳ Uploading to Zoho CRM...";
+            btn.disabled = true;
+            
+            const srcDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+            for (let idx = 0; idx < forms.length; idx++) {
+                const f = forms[idx];
+                const finalName = document.getElementById(`name-${idx}`).value;
+                const newDoc = await PDFLib.PDFDocument.create();
+                const indices = f.pages.map(p => p - 1);
+                const copied = await newDoc.copyPages(srcDoc, indices);
+                copied.forEach(p => newDoc.addPage(p));
+                
+                const bytes = await newDoc.save();
+                const base64 = await arrayBufferToBase64(bytes);
+                
+                const fileName = `Dr_${selectedContactName.replace(/[^a-zA-Z0-9]/g, '_')}_${finalName.replace(/ /g, '_')}.pdf`;
+                
+                try {
+                    await ZOHO.CRM.API.attachFile({
+                        Entity: "Contacts",
+                        RecordID: selectedContactId,
+                        File: {
+                            Name: fileName,
+                            Content: base64
+                        }
+                    });
+                    
+                    updateDebug(`Uploaded: ${fileName}`, true);
+                } catch (error) {
+                    console.error("Error uploading file:", error);
+                    alert(`Failed to upload ${fileName}: ${error.message}`);
+                }
+                
+                await new Promise(r => setTimeout(r, 500));
+            }
+            
+            btn.innerText = "✅ All Files Uploaded!";
+            setTimeout(() => { 
+                btn.disabled = false; 
+                btn.innerText = "☁️ Upload All to Zoho CRM Contact"; 
+            }, 3000);
+        }
+
+        function arrayBufferToBase64(buffer) {
+            return new Promise((resolve) => {
+                const blob = new Blob([buffer], { type: 'application/pdf' });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Close lookup on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#doctorSearch') && !e.target.closest('#lookupResults')) {
+                document.getElementById('lookupResults').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
