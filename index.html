@@ -6,9 +6,9 @@
     <title>Health Fund Pack Separator - Zoho CRM</title>
     
     <script src="https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js"></script>
-    <script src="pdf.min.js"></script>
-    <script src="jsQR.min.js"></script>
-    <script src="pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -113,7 +113,13 @@
 </div>
 
 <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
+    // --- ⚙️ CONFIGURATION: VERIFY THESE API NAMES ---
+    const PROVIDER_MODULE_NAME = "Provider_Numbers";   // Validated from your list
+    const PROVIDER_NAME_FIELD = "Name";                // This is the default API Name for the primary unique field
+    const PROVIDER_CONTACT_FIELD = "Provider_Contact"; // Validated from your list (linked to Contact)
+    // ------------------------------------------------
+
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     
     let ZOHO;
     let pdfBytes = null;
@@ -133,7 +139,7 @@
 
     ZOHO.embeddedApp.init();
 
-    // Contact Search with Debounce
+    // --- STEP 1: CONTACT SEARCH (STRICTLY CONTACTS MODULE) ---
     let searchTimeout;
     document.getElementById('doctorSearch').addEventListener('input', function(e) {
         clearTimeout(searchTimeout);
@@ -149,6 +155,7 @@
 
     async function searchContacts(query) {
         try {
+            // STRICTLY searching the "Contacts" module
             const response = await ZOHO.CRM.API.searchRecord({
                 Entity: "Contacts",
                 Type: "criteria",
@@ -157,6 +164,9 @@
             
             if (response.data) {
                 displayLookupResults(response.data);
+            } else {
+                document.getElementById('lookupResults').innerHTML = '<div class="lookup-item">No contacts found</div>';
+                document.getElementById('lookupResults').style.display = 'block';
             }
         } catch (error) {
             console.error("Error searching contacts:", error);
@@ -166,12 +176,6 @@
     function displayLookupResults(contacts) {
         const resultsDiv = document.getElementById('lookupResults');
         resultsDiv.innerHTML = '';
-        
-        if (contacts.length === 0) {
-            resultsDiv.innerHTML = '<div class="lookup-item">No contacts found</div>';
-            resultsDiv.style.display = 'block';
-            return;
-        }
         
         contacts.forEach(contact => {
             const div = document.createElement('div');
@@ -189,40 +193,60 @@
 
     async function selectContact(contact) {
         selectedContactId = contact.id;
-        selectedContactName = contact.Full_Name;
+        selectedContactName = contact.Full_Name; 
+        
         document.getElementById('doctorSearch').value = contact.Full_Name;
         document.getElementById('selectedContactId').value = contact.id;
         document.getElementById('lookupResults').style.display = 'none';
         
-        // Fetch provider numbers for this contact
+        // Trigger Provider Search using the Contact ID
         await fetchProviderNumbers(contact.id);
     }
 
+    // --- STEP 2: FETCH PROVIDERS FROM CUSTOM MODULE ---
     async function fetchProviderNumbers(contactId) {
         try {
-            // Fetch the contact record to get provider numbers
-            const response = await ZOHO.CRM.API.getRecord({
-                Entity: "Contacts",
-                RecordID: contactId
+            console.log(`Searching ${PROVIDER_MODULE_NAME} for Contact ID: ${contactId}`);
+
+            // Search the Provider Module where 'Provider_Contact' equals the Contact ID
+            const response = await ZOHO.CRM.API.searchRecord({
+                Entity: PROVIDER_MODULE_NAME,
+                Type: "criteria",
+                Query: `(${PROVIDER_CONTACT_FIELD}:equals:${contactId})`
             });
             
-            if (response.data && response.data[0]) {
-                const contact = response.data[0];
+            availableProviders = [];
+
+            if (response.data) {
+                response.data.forEach(record => {
+                    // Get the Provider Number (Default API Name is 'Name' for the main field)
+                    // If 'Name' is empty, we fall back to 'Provider_Number' just in case
+                    const pNum = record[PROVIDER_NAME_FIELD] || record.Provider_Number;
+                    
+                    // Logic to find a good label (Hospital Name OR Practice Name)
+                    let pLoc = "";
+                    if (record.Hospital && record.Hospital.name) {
+                        pLoc = record.Hospital.name; // Lookup object returns {name: "...", id: "..."}
+                    } else if (record.Practice_Name) {
+                        pLoc = record.Practice_Name;
+                    }
+                    
+                    if(pNum) {
+                        availableProviders.push({
+                            value: pNum,
+                            label: pLoc ? `${pNum} (${pLoc})` : pNum
+                        });
+                    }
+                });
                 
-                // Assuming provider numbers are stored in a multi-select field called "Provider_Numbers"
-                // Adjust field name based on your CRM setup
-                const providerField = contact.Provider_Numbers || contact.Provider_Number || '';
-                
-                if (providerField) {
-                    availableProviders = providerField.split(';').map(p => p.trim()).filter(p => p);
-                    displayProviderCheckboxes();
-                } else {
-                    alert("No provider numbers found for this contact");
-                }
+                displayProviderCheckboxes();
+            } else {
+                alert(`No provider numbers found linked to this contact in the '${PROVIDER_MODULE_NAME}' module.`);
+                document.getElementById('providerGroup').style.display = 'none';
             }
         } catch (error) {
-            console.error("Error fetching provider numbers:", error);
-            alert("Could not fetch provider numbers. Please check field configuration.");
+            console.error("Error fetching provider module:", error);
+            alert(`Error searching '${PROVIDER_MODULE_NAME}'. Check the console for details.`);
         }
     }
 
@@ -230,12 +254,14 @@
         const container = document.getElementById('providerCheckboxes');
         container.innerHTML = '';
         
-        availableProviders.forEach((provider, index) => {
+        if(availableProviders.length === 0) return;
+
+        availableProviders.forEach((providerObj) => {
             const label = document.createElement('label');
             label.className = 'checkbox-label';
             label.innerHTML = `
-                <input type="checkbox" value="${provider}" onchange="updateSelectedProviders()">
-                <span>${provider}</span>
+                <input type="checkbox" value="${providerObj.value}" onchange="updateSelectedProviders()">
+                <span>${providerObj.label}</span>
             `;
             container.appendChild(label);
         });
@@ -253,7 +279,7 @@
         ).join('');
     }
 
-    // PDF Processing (keeping existing logic)
+    // --- STEP 3: PDF PROCESSING ---
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -420,10 +446,11 @@
             const bytes = await newDoc.save();
             const base64 = await arrayBufferToBase64(bytes);
             
+            // Clean filename
             const fileName = `Dr_${selectedContactName.replace(/[^a-zA-Z0-9]/g, '_')}_${finalName.replace(/ /g, '_')}.pdf`;
             
             try {
-                // Upload as attachment to contact
+                // Upload as attachment to CONTACT
                 await ZOHO.CRM.API.attachFile({
                     Entity: "Contacts",
                     RecordID: selectedContactId,
