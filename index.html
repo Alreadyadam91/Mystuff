@@ -1,123 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Fund Pack Separator - Zoho CRM</title>
-    
-    <script src="https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        :root { --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%); --accent: #667eea; --accent-light: #818cf8; --bg: #0f172a; --card: #1e293b; --border: #334155; --text: #e2e8f0; --text-dim: #94a3b8; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .app { max-width: 1000px; margin: 0 auto; background: var(--card); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
-        .header { background: var(--primary); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
-        .header h1 { margin: 0; font-size: 1.8rem; font-weight: 800; color: white; position: relative; z-index: 1; }
-        .header-subtitle { font-size: 0.9rem; opacity: 0.9; margin-top: 5px; font-weight: 500; }
-        .btn-reset { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; z-index: 1; position: relative; }
-        .content { padding: 40px; }
-        .input-group { margin-bottom: 25px; position: relative; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text); }
-        input, textarea, select { width: 100%; padding: 14px 18px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); font-size: 1rem; }
-        .lookup-input { cursor: pointer; }
-        .lookup-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 2px solid var(--accent); border-radius: 12px; max-height: 300px; overflow-y: auto; z-index: 100; display: none; margin-top: 5px; }
-        .lookup-item { padding: 12px 18px; cursor: pointer; border-bottom: 1px solid var(--border); }
-        .lookup-item:hover { background: var(--bg); }
-        .lookup-item:last-child { border-bottom: none; }
-        .checkbox-group { display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto; padding: 10px; background: var(--bg); border-radius: 8px; }
-        .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px; border-radius: 6px; }
-        .checkbox-label:hover { background: var(--card); }
-        .checkbox-label input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
-        .upload-zone { border: 3px dashed var(--border); border-radius: 16px; padding: 60px 40px; text-align: center; cursor: pointer; background: rgba(102, 126, 234, 0.05); transition: all 0.4s ease; }
-        .upload-zone:hover { border-color: var(--accent); background: rgba(102, 126, 234, 0.1); }
-        .debug-container { margin-top: 30px; padding: 25px; background: #1e293b; border-radius: 16px; color: white; display: none; border: 1px solid var(--border); }
-        .debug-canvas { border: 2px solid var(--accent); margin-top: 15px; max-width: 100%; height: auto; border-radius: 8px; }
-        .form-row { display: flex; align-items: center; padding: 18px 20px; border: 2px solid var(--border); border-radius: 14px; margin-bottom: 12px; background: var(--bg); cursor: pointer; }
-        .form-icon { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; font-weight: 800; }
-        .preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .preview-modal.active { display: flex; }
-        .preview-content { background: var(--card); border-radius: 20px; padding: 30px; max-width: 95%; max-height: 95%; overflow: auto; position: relative; border: 1px solid var(--border); }
-        .preview-close { position: absolute; top: 20px; right: 20px; background: #ef4444; color: white; border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; }
-        .preview-canvas { border: 2px solid var(--border); margin-top: 20px; max-width: 100%; border-radius: 12px; }
-        .preview-nav { display: flex; gap: 15px; margin-top: 20px; justify-content: center; align-items: center; }
-        .btn { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 25px; font-size: 1.1rem; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .hidden { display: none; }
-        .selected-provider { display: inline-block; background: var(--accent); color: white; padding: 6px 12px; border-radius: 6px; margin: 5px 5px 0 0; font-size: 0.9rem; }
-    </style>
-</head>
-<body>
-
-<div class="app">
-    <div class="header">
-        <div>
-            <h1>Health Fund Pack Separator</h1>
-            <div class="header-subtitle">Zoho CRM Integrated • QR Detection & Document Splitting</div>
-        </div>
-        <button class="btn-reset" onclick="location.reload()">↻ Reset</button>
-    </div>
-    <div class="content">
-        <div id="step1">
-            <div class="input-group">
-                <label>👨‍⚕️ Doctor Name (Search Contact)</label>
-                <input type="text" id="doctorSearch" class="lookup-input" placeholder="Type to search contacts..." autocomplete="off">
-                <input type="hidden" id="selectedContactId">
-                <div id="lookupResults" class="lookup-results"></div>
-            </div>
-            
-            <div class="input-group" id="providerGroup" style="display:none;">
-                <label>🔢 Select Provider Number(s)</label>
-                <div id="providerCheckboxes" class="checkbox-group"></div>
-                <div id="selectedProviders"></div>
-            </div>
-            
-            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                <h3>📤 Upload PDF Pack</h3>
-                <p style="color:var(--text-dim); margin-top:8px;">Scanning bottom-right corner of every page for QR codes</p>
-                <input type="file" id="fileInput" accept="application/pdf" style="display:none">
-            </div>
-        </div>
-        
-        <div id="debugBox" class="debug-container">
-            <div class="debug-info">🔍 SCANNER DEBUG VIEW (Bottom Right Corner)</div>
-            <div id="scanStatus">Initializing...</div>
-            <canvas id="debugCanvas" class="debug-canvas"></canvas>
-            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:8px;">If you see the QR code clearly above, detection will work perfectly.</div>
-        </div>
-        
-        <div id="step2" class="hidden">
-            <h3 style="margin-bottom:20px; padding-bottom:15px; border-bottom:2px solid var(--border); font-size:1.4rem;">✅ Detected Forms (Click to Preview)</h3>
-            <div id="resultsList"></div>
-            <button id="uploadBtn" class="btn" onclick="uploadToZoho()">☁️ Upload All to Zoho CRM Contact</button>
-        </div>
-    </div>
-</div>
-
-<div id="previewModal" class="preview-modal">
-    <div class="preview-content">
-        <button class="preview-close" onclick="closePreview()">✕ Close</button>
-        <h3 id="previewTitle" style="font-size:1.5rem;">Preview</h3>
-        <div style="color: var(--text-dim); margin-top: 8px;" id="previewInfo"></div>
-        <canvas id="previewCanvas" class="preview-canvas"></canvas>
-        <div class="preview-nav">
-            <button onclick="previewPrevPage()" id="prevPageBtn">← Previous</button>
-            <span id="pageIndicator" style="padding: 12px 20px; color: var(--text-dim); font-weight:600;"></span>
-            <button onclick="previewNextPage()" id="nextPageBtn">Next →</button>
-        </div>
-    </div>
-</div>
-
 <script>
-    // --- ⚙️ CONFIGURATION: VERIFY THESE API NAMES ---
-    const PROVIDER_MODULE_NAME = "Provider_Numbers";   // Validated from your list
-    const PROVIDER_NAME_FIELD = "Name";                // This is the default API Name for the primary unique field
-    const PROVIDER_CONTACT_FIELD = "Provider_Contact"; // Validated from your list (linked to Contact)
-    // ------------------------------------------------
+    // --- ⚙️ CONFIGURATION -------------------------------
+    const PROVIDER_MODULE_NAME = "Provider_Numbers";   
+    const PROVIDER_NAME_FIELD = "Name";                
+    const PROVIDER_CONTACT_FIELD = "Provider_Contact"; 
+    // ----------------------------------------------------
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
     
@@ -131,13 +17,18 @@
     let selectedContactName = null;
     let availableProviders = [];
     let selectedProviders = [];
+    let sdkReady = false;
 
     // Initialize Zoho SDK
     ZOHO.embeddedApp.on("PageLoad", function(data) {
-        console.log("Zoho SDK initialized");
+        console.log("✅ Zoho SDK Loaded Successfully");
+        sdkReady = true;
     });
 
-    ZOHO.embeddedApp.init();
+    ZOHO.embeddedApp.init().then(() => {
+        console.log("✅ Zoho SDK Init Completed");
+        sdkReady = true;
+    });
 
     // --- STEP 1: CONTACT SEARCH (STRICTLY CONTACTS MODULE) ---
     let searchTimeout;
@@ -150,26 +41,48 @@
             return;
         }
         
-        searchTimeout = setTimeout(() => searchContacts(query), 300);
+        searchTimeout = setTimeout(() => searchContacts(query), 400);
     });
 
     async function searchContacts(query) {
+        if (!sdkReady) {
+            console.warn("⚠️ SDK not ready yet. Please wait a moment.");
+            return;
+        }
+
+        console.log(`🔎 Searching for: "${query}"...`);
+        
         try {
-            // STRICTLY searching the "Contacts" module
-            const response = await ZOHO.CRM.API.searchRecord({
+            // TRY 1: Search by Last Name OR First Name (Most reliable)
+            // Note: We use specific criteria because Full_Name often fails in API
+            let response = await ZOHO.CRM.API.searchRecord({
                 Entity: "Contacts",
                 Type: "criteria",
-                Query: `(Full_Name:starts_with:${query})`
+                Query: `((Last_Name:starts_with:${query}) OR (First_Name:starts_with:${query}))`
             });
+
+            // TRY 2: If no results, try a generic "word" search (Broad search)
+            if (!response.data) {
+                console.log("No specific matches, trying broad search...");
+                response = await ZOHO.CRM.API.searchRecord({
+                    Entity: "Contacts",
+                    Type: "word",
+                    Query: query
+                });
+            }
             
             if (response.data) {
+                console.log(`✅ Found ${response.data.length} contacts.`);
                 displayLookupResults(response.data);
             } else {
+                console.log("❌ No contacts found.");
                 document.getElementById('lookupResults').innerHTML = '<div class="lookup-item">No contacts found</div>';
                 document.getElementById('lookupResults').style.display = 'block';
             }
         } catch (error) {
-            console.error("Error searching contacts:", error);
+            console.error("❌ Error searching contacts:", error);
+            document.getElementById('lookupResults').innerHTML = '<div class="lookup-item" style="color:red">Search Error (Check Console)</div>';
+            document.getElementById('lookupResults').style.display = 'block';
         }
     }
 
@@ -177,12 +90,17 @@
         const resultsDiv = document.getElementById('lookupResults');
         resultsDiv.innerHTML = '';
         
-        contacts.forEach(contact => {
+        // Limit to 10 results to keep it fast
+        contacts.slice(0, 10).forEach(contact => {
             const div = document.createElement('div');
             div.className = 'lookup-item';
+            
+            // Handle missing Full_Name by constructing it
+            const displayName = contact.Full_Name || `${contact.First_Name || ''} ${contact.Last_Name || ''}`;
+            
             div.innerHTML = `
-                <div style="font-weight:600;">${contact.Full_Name}</div>
-                <div style="font-size:0.85rem; color:var(--text-dim);">${contact.Email || ''}</div>
+                <div style="font-weight:600;">${displayName}</div>
+                <div style="font-size:0.85rem; color:var(--text-dim);">${contact.Email || 'No Email'}</div>
             `;
             div.onclick = () => selectContact(contact);
             resultsDiv.appendChild(div);
@@ -192,10 +110,13 @@
     }
 
     async function selectContact(contact) {
-        selectedContactId = contact.id;
-        selectedContactName = contact.Full_Name; 
+        // Handle cases where Full_Name might be empty in the object
+        const displayName = contact.Full_Name || `${contact.First_Name} ${contact.Last_Name}`;
         
-        document.getElementById('doctorSearch').value = contact.Full_Name;
+        selectedContactId = contact.id;
+        selectedContactName = displayName;
+        
+        document.getElementById('doctorSearch').value = displayName;
         document.getElementById('selectedContactId').value = contact.id;
         document.getElementById('lookupResults').style.display = 'none';
         
@@ -206,9 +127,8 @@
     // --- STEP 2: FETCH PROVIDERS FROM CUSTOM MODULE ---
     async function fetchProviderNumbers(contactId) {
         try {
-            console.log(`Searching ${PROVIDER_MODULE_NAME} for Contact ID: ${contactId}`);
+            console.log(`🔎 Searching ${PROVIDER_MODULE_NAME} for Contact ID: ${contactId}`);
 
-            // Search the Provider Module where 'Provider_Contact' equals the Contact ID
             const response = await ZOHO.CRM.API.searchRecord({
                 Entity: PROVIDER_MODULE_NAME,
                 Type: "criteria",
@@ -218,15 +138,13 @@
             availableProviders = [];
 
             if (response.data) {
+                console.log(`✅ Found ${response.data.length} provider numbers.`);
                 response.data.forEach(record => {
-                    // Get the Provider Number (Default API Name is 'Name' for the main field)
-                    // If 'Name' is empty, we fall back to 'Provider_Number' just in case
                     const pNum = record[PROVIDER_NAME_FIELD] || record.Provider_Number;
                     
-                    // Logic to find a good label (Hospital Name OR Practice Name)
                     let pLoc = "";
                     if (record.Hospital && record.Hospital.name) {
-                        pLoc = record.Hospital.name; // Lookup object returns {name: "...", id: "..."}
+                        pLoc = record.Hospital.name; 
                     } else if (record.Practice_Name) {
                         pLoc = record.Practice_Name;
                     }
@@ -241,12 +159,12 @@
                 
                 displayProviderCheckboxes();
             } else {
-                alert(`No provider numbers found linked to this contact in the '${PROVIDER_MODULE_NAME}' module.`);
+                alert(`No provider numbers found linked to this contact in '${PROVIDER_MODULE_NAME}'.`);
                 document.getElementById('providerGroup').style.display = 'none';
             }
         } catch (error) {
-            console.error("Error fetching provider module:", error);
-            alert(`Error searching '${PROVIDER_MODULE_NAME}'. Check the console for details.`);
+            console.error("❌ Error fetching provider module:", error);
+            alert(`Error searching '${PROVIDER_MODULE_NAME}'. Check Console (F12).`);
         }
     }
 
@@ -279,7 +197,7 @@
         ).join('');
     }
 
-    // --- STEP 3: PDF PROCESSING ---
+    // --- STEP 3: PDF PROCESSING (Unchanged Logic) ---
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -446,11 +364,9 @@
             const bytes = await newDoc.save();
             const base64 = await arrayBufferToBase64(bytes);
             
-            // Clean filename
             const fileName = `Dr_${selectedContactName.replace(/[^a-zA-Z0-9]/g, '_')}_${finalName.replace(/ /g, '_')}.pdf`;
             
             try {
-                // Upload as attachment to CONTACT
                 await ZOHO.CRM.API.attachFile({
                     Entity: "Contacts",
                     RecordID: selectedContactId,
@@ -495,5 +411,3 @@
         }
     });
 </script>
-</body>
-</html>
